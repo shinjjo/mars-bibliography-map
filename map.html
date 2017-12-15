@@ -1,0 +1,235 @@
+ 
+<html>
+  <head>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css">
+    <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script> 
+    <script src='//api.tiles.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.min.js'></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/8.5.1/nouislider.min.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/noUiSlider/8.5.1/nouislider.min.js"></script>
+    <style>
+      #map {width: 100%; height: 100%}
+     .info {
+        padding: 6px 8px;
+        font: 14px/16px Arial, Helvetica, sans-serif;
+        background: white;
+        background: rgba(255,255,255,0.8);
+        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        border-radius: 1px;
+      }
+      .info h4 {
+        margin: 0 0 5px;
+        color: #777;
+      }
+
+      .legend {
+        line-height: 18px;
+        color: #555;
+      }
+      .legend i {
+      width: 18px;
+      height: 18px;
+      float: left;
+      margin-right: 8px;
+      opacity: 0.7;
+    }
+   </style>
+  </head>
+  <body>
+    <div id="map"></div>
+    <script type = "text/javascript" src = "mapdata.geojson"></script>
+    <script>
+      var mapboxAccessToken = "pk.eyJ1Ijoic2hpbmpqbyIsImEiOiJjajlzaGZscTUwamlvM3VwZ2xvbHlvdnh2In0.FX5GpnQsst-vqywi0jIb1A";
+      var map = L.map('map').setView([0, 0], 2.8);
+        L.tileLayer('https://cartocdn-ashbu.global.ssl.fastly.net/nmanaud/api/v1/map/named/opm-mars-basemap-v0-1/all/{z}/{x}/{y}.png', {maxZoom: 18, attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attribution">CARTO</a>',
+          layers: [crater, mons]
+      }).addTo(map);
+
+      function getColor(d) {
+        return d > 1000 ? '#800026' :
+               d > 500  ? '#BD0026' :
+               d > 200  ? '#E31A1C' :
+               d > 100  ? '#FC4E2A' :
+               d > 50   ? '#FD8D3C' :
+               d > 20   ? '#FEB24C' :
+               d > 10   ? '#FED976' :
+                        '#FFEDA0';
+      }
+
+      function style(feature) {
+        return {
+          fillColor: getColor(feature.properties.number_of_papers),
+          weight: 3,
+          opacity: 2,
+          color: 'white',
+          dashArray: '1',
+          fillOpacity: 0.3
+        };
+      }
+
+      function highlightFeature(e) {
+        var layer = e.target;      
+        layer.setStyle({
+        weight: 5,
+        color: '#666',
+        dashArray: '',
+        fillOpacity: 0.7
+        });
+
+        if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
+          layer.bringToFront();
+        }
+        info.update(layer.feature.properties);
+
+      }
+
+      function resetHighlight(e) {
+        geojson.resetStyle(e.target);
+        info.update();
+      }
+
+      function zoomToFeature(e) {
+       map.fitBounds(e.target.getBounds());
+      }
+
+      function onEachFeature(feature, layer) {
+       layer.on({
+        mouseover: highlightFeature,
+        mouseout: resetHighlight,
+        click: zoomToFeature
+        });
+      }
+
+      var info = L.control();
+
+      info.onAdd = function (map) {
+        this._div = L.DomUtil.create('div', 'info'); // create a div with a class "info"
+        this.update();
+        return this._div;
+      };
+
+// method that we will use to update the control based on feature properties passed
+      info.update = function (props) {
+        this._div.innerHTML = '<h4>Mars Bibliographic Information</h4>' +  (props ?
+        '<b>' + props.Clean_Feature_Name + '</b><br />' + 'Number of Papers:' + props.number_of_papers 
+        : 'Hover over a feature');
+      };
+
+      info.addTo(map);
+
+
+
+      var geojson = L.geoJson(Mars, {
+        onEachFeature: onEachFeature
+      }).addTo(map);
+
+  // Feature Type Filter
+
+      var crater = L.geoJson(Mars, {
+        filter: craterFilter,
+        style: style,
+        onEachFeature: onEachFeature
+      });
+
+      var mons = L.geoJson(Mars, {
+        filter: monsFilter,
+        style: style,
+        onEachFeature: onEachFeature
+      });
+
+      var fossa = L.geoJson(Mars, {
+        filter: fossaFilter,
+        style: style,
+        onEachFeature: onEachFeature
+      });
+
+      var vallis = L.geoJson(Mars, {
+        filter: vallisFilter,
+        style: style,
+        onEachFeature: onEachFeature
+      });
+
+      var planum = L.geoJson(Mars, {
+        filter: planumFilter,
+        style: style,
+        onEachFeature: onEachFeature
+      });
+
+      var other = L.geoJson(Mars, {
+        filter: otherFilter,
+        style: style,
+        onEachFeature: onEachFeature
+      });
+
+
+
+      function craterFilter(feature){
+        if (feature.properties.Feature_Type === "Crater, craters") 
+          return true
+      }
+
+      function monsFilter(feature){
+        if (feature.properties.Feature_Type === "Mons, montes") 
+          return true
+      }
+
+      function fossaFilter(feature){
+        if (feature.properties.Feature_Type === "Fossa, fossae") 
+          return true
+      }
+
+      function vallisFilter(feature){
+        if (feature.properties.Feature_Type === "Vallis, valles") 
+          return true
+      }
+
+      function planumFilter(feature){
+        if (feature.properties.Feature_Type === "Planum, plana") 
+          return true
+      }
+
+      function otherFilter(feature){
+        if ((feature.properties.Feature_Type !== "Crater, craters") && (feature.properties.Feature_Type !== "Mons, montes") &&(feature.properties.Feature_Type !== "Fossa, fossae") && (feature.properties.Feature_Type !== "Vallis, valles") &&(feature.properties.Feature_Type !== "Planum, plana")) 
+          return true
+      }
+
+      var legend = L.control({position: 'bottomright'});
+
+      legend.onAdd = function (map) {
+
+      var div = L.DomUtil.create('div', 'info legend'),
+        grades = [0, 10, 20, 50, 100, 200, 500, 1000],
+        labels = [];
+
+    // loop through our density intervals and generate a label with a colored square for each interval
+      for (var i = 0; i < grades.length; i++) {
+        div.innerHTML +=
+          '<i style="background:' + getColor(grades[i] + 1) + '"></i> ' +
+          grades[i] + (grades[i + 1] ? '&ndash;' + grades[i + 1] + '<br>' : '+');
+        }
+
+        return div;
+      };
+
+      legend.addTo(map); 
+
+      var baselayer = {
+        "All Feature Types": geojson
+      }
+      var overlayMaps = {
+        "Crater, craters" : crater,
+        "Mons, montes" : mons,
+        "Fossa, fossae" : fossa,
+        "Vallis, valles" : vallis,
+        "Planum, plana" : planum,
+        "Other" : other
+      };
+
+      var typeFilter = L.control.layers(baselayer, overlayMaps);
+      typeFilter.addTo(map);
+
+
+
+    </script>
+  </body>
+</html>
