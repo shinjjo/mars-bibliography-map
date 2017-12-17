@@ -1,0 +1,83 @@
+
+ 
+<html xmlns="http://www.w3.org/1999/xhtml"> 
+<head> 
+<title></title> 
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> 
+  <head>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css">
+    <link rel="stylesheet" href="src/leaflet.fusesearch.css" />
+    <link rel="stylesheet" href="src/leaflet-search.css" />
+        <link rel="stylesheet" href="style.css" />
+    <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
+    <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script> 
+    <script src="https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.min.js"></script>
+    <script src ="src/papaparse.min.js"></script>
+    <script src ="src/leaflet.fusesearch.js"></script>
+    <script src ="src/fuse.min.js"></script>
+    <script src ="src/leaflet-search.src.js"></script>
+    <script type = "text/javascript" src = "searchdata_short.json"></script>
+
+    <style>
+      #map {width: 100%; height: 100%}
+     .info {
+        padding: 6px 8px;
+        font: 14px/16px Arial, Helvetica, sans-serif;
+        background: white;
+        background: rgba(255,255,255,0.8);
+        box-shadow: 0 0 15px rgba(0,0,0,0.2);
+        border-radius: 1px;
+      }
+      .info h4 {
+        margin: 0 0 5px;
+        color: #777;
+      }
+
+      .legend {
+        line-height: 18px;
+        color: #555;
+      }
+      .legend i {
+      width: 18px;
+      height: 18px;
+      float: left;
+      margin-right: 8px;
+      opacity: 0.7;
+    }
+   </style>
+  </head>
+
+  <body>
+    <div id="map"></div>
+    <script>
+
+    var data = searchdata;
+
+		var map = new L.Map('map', {zoom: 5, center: new L.latLng([37.8, -96]) });
+
+		map.addLayer(new L.TileLayer('https://cartocdn-ashbu.global.ssl.fastly.net/nmanaud/api/v1/map/named/opm-mars-basemap-v0-1/all/{z}/{x}/{y}.png'));	//base layer
+
+
+      var featuresLayer = new L.GeoJSON(data, {
+        onEachFeature: function(feature, marker) {
+        marker.bindPopup('<h4 style="color:'+feature.properties.color+'">'+ feature.properties.Clean_Feature_Name +'</h4>');
+        }
+      });
+         
+      var searchControl = new L.Control.Search({
+          layer: featuresLayer,
+          propertyName: 'Clean_Feature_Name',
+          initial: false,
+          zoom: 8,
+          hideMarkerOnCollapse: true,
+            moveToLocation: function(latlng, title, map) {
+            map.setView(latlng); // access the zoom
+            },
+           });
+        map.addControl( searchControl );  
+
+    </script>
+
+  </body>
+</html>
+
