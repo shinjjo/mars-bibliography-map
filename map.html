@@ -5,15 +5,12 @@
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" /> 
   <head>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css">
-    <link rel="stylesheet" href="src/leaflet.fusesearch.css" />
     <link rel="stylesheet" href="src/leaflet-search.css" />
-        <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="src/style.css" />
     <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
     <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script> 
     <script src="https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.min.js"></script>
     <script src ="src/papaparse.min.js"></script>
-    <script src ="src/leaflet.fusesearch.js"></script>
-    <script src ="src/fuse.min.js"></script>
     <script src ="src/leaflet-search.src.js"></script>
 
     <style>
@@ -47,32 +44,109 @@
   <body>
     <div id="map"></div>
     <script type = "text/javascript" src = "mapdata.geojson"></script>
-    <script type = "text/javascript" src = "searchdata_short.json"></script>
+    <script type = "text/javascript" src = "searchdata.json"></script>
     <script>
       var mapboxAccessToken = "pk.eyJ1Ijoic2hpbmpqbyIsImEiOiJjajlzaGZscTUwamlvM3VwZ2xvbHlvdnh2In0.FX5GpnQsst-vqywi0jIb1A";
       var map = L.map('map').setView([0, 0], 2.8);
         L.tileLayer('https://cartocdn-ashbu.global.ssl.fastly.net/nmanaud/api/v1/map/named/opm-mars-basemap-v0-1/all/{z}/{x}/{y}.png', {maxZoom: 18, attribution: '&copy; <a href="http://www.openstreetmap.org/copyright">OpenStreetMap</a>, &copy; <a href="https://carto.com/attribution">CARTO</a>',
       }).addTo(map);
 
-      function getColor(d) {
-        return d > 1000 ? '#800026' :
-               d > 500  ? '#BD0026' :
-               d > 200  ? '#E31A1C' :
-               d > 100  ? '#FC4E2A' :
-               d > 50   ? '#FD8D3C' :
-               d > 20   ? '#FEB24C' :
-               d > 10   ? '#FED976' :
-                        '#FFEDA0';
+      function fColor(f) {
+        return f == 'Crater, craters' ? '#FF851B' :
+               f == 'Mons, montes' ? '#0074D9' :
+               f == 'Vallis, valles' ? '#39CCCC' :
+               f == 'Fossa, fossae' ? '#FFDC00' :
+               f == 'Planum, plana' ? '#001F3F' :
+                            '#DDDDDD';
+
       }
 
-      function style(feature) {
+      function getColor(d) {
+        return d > 1000 ? '#093343' :
+               d > 500  ? '#0E5570' :
+               d > 200  ? '#14799E' :
+               d > 100  ? '#178AB5' :
+               d > 50   ? '#33B5E5' :
+               d > 20   ? '#5FC5EB' :
+               d > 10   ? '#8ED6F0' :
+                        '#A8BDCA';
+      }
+
+      function nop(feature) {
         return {
           fillColor: getColor(feature.properties.number_of_papers),
           weight: 3,
           opacity: 2,
           color: 'white',
           dashArray: '1',
-          fillOpacity: 0.3
+          fillOpacity: 0.9
+        };
+      }
+
+
+      function nocp(feature) {
+        return {
+          fillColor: getColor(feature.properties.number_of_citing_papers),
+          weight: 3,
+          opacity: 2,
+          color: 'white',
+          dashArray: '1',
+          fillOpacity: 0.9
+        };
+      }
+
+      function nosc(feature) {
+        return {
+          fillColor: getColor(feature.properties.number_of_self_citations),
+          weight: 3,
+          opacity: 2,
+          color: 'white',
+          dashArray: '1',
+          fillOpacity: 0.9
+        };
+      }
+
+      function tnc(feature) {
+        return {
+          fillColor: getColor(feature.properties.total_number_of_citations),
+          weight: 3,
+          opacity: 2,
+          color: 'white',
+          dashArray: '1',
+          fillOpacity: 0.9
+        };
+      }
+
+      function tnrc(feature) {
+        return {
+          fillColor: getColor(feature.properties.total_number_of_refereed_citations),
+          weight: 3,
+          opacity: 2,
+          color: 'white',
+          dashArray: '1',
+          fillOpacity: 0.9
+        };
+      }
+
+      function pallette(feature) {
+        return {
+          fillColor: fColor(feature.properties.Feature_Type),
+          weight: 3,
+          opacity: 2,
+          color: 'white',
+          dashArray: '1',
+          fillOpacity: 0.9
+        };
+      }
+
+      function landcolor(feature) {
+        return {
+          fillColor: '#dd2121',
+          weight: 3,
+          opacity: 2,
+          color: 'white',
+          dashArray: '1',
+          fillOpacity: 0.9
         };
       }
 
@@ -80,9 +154,9 @@
         var layer = e.target;      
         layer.setStyle({
         weight: 5,
-        color: '#666',
+        color: '#ff7800',
         dashArray: '',
-        fillOpacity: 0.7
+        fillOpacity: 0.8
         });
 
         if (!L.Browser.ie && !L.Browser.opera && !L.Browser.edge) {
@@ -100,7 +174,7 @@
       function onEachFeature(feature, layer) {
        layer.on({
         mouseover: highlightFeature,
-        mouseout: resetHighlight,
+        mouseout: highlightFeature,
         });
       }
 
@@ -115,59 +189,92 @@
 // method that we will use to update the control based on feature properties passed
       info.update = function (props) {
         this._div.innerHTML = '<h4>Mars Bibliographic Information</h4>' +  (props ?
-        '<b>' + props.Clean_Feature_Name + '</b><br />' + 'Number of Papers:' + props.number_of_papers 
+        '<b>' + props.Clean_Feature_Name + '</b><br/>' + 'Feature Type: ' + props.Feature_Type 
+        + '<br/>' + 'Diameter: ' + props.Diameter + '<br/>' + 'Origin: ' + props.Origin
         : 'Hover over a feature');
       };
 
       info.addTo(map);
 
-
+      function polystyle(feature) {
+        return {
+        fillColor: 'transparent',
+        weight: 2,
+        opacity: 1,
+        color: 'white',  //Outline color
+        fillOpacity: 0.7
+        };
+      }
 
       var geojson = L.geoJson(Mars, {
-        onEachFeature: onEachFeature
+        style: polystyle,
+        onEachFeature: onEachFeature 
       }).addTo(map);
+
+      var nopmap = L.geoJson(Mars, {
+        style: nop,
+        onEachFeature: onEachFeature 
+      });
+
+      var nocpmap = L.geoJson(Mars, {
+        style: nocp,
+        onEachFeature: onEachFeature 
+      });
+
+      var noscmap = L.geoJson(Mars, {
+        style: nosc,
+        onEachFeature: onEachFeature 
+      });
+
+      var tncmap = L.geoJson(Mars, {
+        style: tnc,
+        onEachFeature: onEachFeature 
+      });
+
+      var tnrcmap = L.geoJson(Mars, {
+        style: tnrc,
+        onEachFeature: onEachFeature 
+      });
+
 
   // Feature Type Filter
 
       var crater = L.geoJson(Mars, {
         filter: craterFilter,
-        style: style,
-        onEachFeature: onEachFeature
+        style: pallette,
       });
 
       var mons = L.geoJson(Mars, {
         filter: monsFilter,
-        style: style,
-        onEachFeature: onEachFeature
+        style: pallette,
       });
 
       var fossa = L.geoJson(Mars, {
         filter: fossaFilter,
-        style: style,
-        onEachFeature: onEachFeature
+        style: pallette,
       });
 
       var vallis = L.geoJson(Mars, {
         filter: vallisFilter,
-        style: style,
+        style: pallette,
         onEachFeature: onEachFeature
       });
 
       var planum = L.geoJson(Mars, {
         filter: planumFilter,
-        style: style,
+        style: pallette,
         onEachFeature: onEachFeature
       });
 
       var other = L.geoJson(Mars, {
         filter: otherFilter,
-        style: style,
+        style: pallette,
         onEachFeature: onEachFeature
       });
 
       var landing = L.geoJson(Mars, {
         filter: landFilter,
-        style: style,
+        style: landcolor,
         onEachFeature: onEachFeature
       });
 
@@ -225,7 +332,14 @@
       legend.addTo(map); 
 
       var baselayer = {
-        "All Feature Types": geojson
+        "Basemap": geojson,
+        "[Heatmap] Number of Papers" : nopmap,
+        "[Heatmap] Number of Citing Papers" : nocpmap,
+        "[Heatmap] Number of Self-citations" : noscmap,
+        "[Heatmap] Total Number of Citations" : tncmap,
+        "[Heatmap] Total Numbre of Refereed Citations" : tnrcmap,
+        "Landing Sites": landing
+
       }
       var overlayMaps = {
         "Crater, craters" : crater,
@@ -234,8 +348,8 @@
         "Vallis, valles" : vallis,
         "Planum, plana" : planum,
         "Other" : other,
-        "Landing Sites": landing
       };
+      
 
       var typeFilter = L.control.layers(baselayer, overlayMaps);
       typeFilter.addTo(map);
@@ -243,19 +357,68 @@
   // Search
 
         var data = searchdata;
+      function clickFeature(feature, marker){marker.bindPopup('<h4 style="color:'+feature.properties.color+'">'+ 
+          feature.properties.Clean_Feature_Name + '<br/>'+'SUM---------------------------------------' + 
+          '<br/>' + 'Total Number of Papers: ' + feature.properties.number_of_papers  + 
+          '<br/>' + 'Total number_of_citing_papers: ' + feature.properties.number_of_citing_papers + 
+          '<br/>' +'Total number_of_self_citations: '+ feature.properties.number_of_self_citations +
+          '<br/>' +'Total_number_of_citations: '+ feature.properties.total_number_of_citations +
+          '<br/>' +'Total_number_of_refereed_citations: '+ feature.properties.total_number_of_refereed_citations +
+          '<br/>'+'to 1970---------------------------------------' + 
+          '<br/>' +'Number of Papers to 1970: '+ feature.properties.number_of_papers_1970 +
+          '<br/>' +'Number of citing Papers to 1970: '+ feature.properties.number_of_citing_papers_1970 +
+          '<br/>' +'Number_of_self_citations_1970: '+ feature.properties.number_of_self_citations_1970 +
+          '<br/>' +'Total_number_of_citations_1970: '+ feature.properties.total_number_of_citations_1970 +
+          '<br/>' +'Total_number_of_refereed_citations_1970: '+ feature.properties.total_number_of_refereed_citations_1970 +
+          '<br/>'+'1971-1980 ---------------------------------------' + 
+          '<br/>' + 'Total Number of Papers: ' + feature.properties.number_of_papers_1971_1980  + 
+          '<br/>' + 'Total number_of_citing_papers: ' + feature.properties.number_of_citing_papers_1971_1980 + 
+          '<br/>' +'Total number_of_self_citations: '+ feature.properties.number_of_self_citations_1971_1980 +
+          '<br/>' +'Total_number_of_citations: '+ feature.properties.total_number_of_citations_1971_1980 +
+          '<br/>' +'Total_number_of_refereed_citations: '+ feature.properties.total_number_of_refereed_citations_1971_1980 +
+          '<br/>'+'1981-1990 ---------------------------------------' + 
+          '<br/>' + 'Total Number of Papers: ' + feature.properties.number_of_papers_1981_1990  + 
+          '<br/>' + 'Total number_of_citing_papers: ' + feature.properties.number_of_citing_papers_1981_1990 + 
+          '<br/>' +'Total number_of_self_citations: '+ feature.properties.number_of_self_citations_1981_1990 +
+          '<br/>' +'Total_number_of_citations: '+ feature.properties.total_number_of_citations_1981_1990 +
+          '<br/>' +'Total_number_of_refereed_citations: '+ feature.properties.total_number_of_refereed_citations_1981_1990 +
+          '<br/>'+'1991-2000 ---------------------------------------' + 
+          '<br/>' + 'Total Number of Papers: ' + feature.properties.number_of_papers_1991_2000  + 
+          '<br/>' + 'Total number_of_citing_papers: ' + feature.properties.number_of_citing_papers_1991_2000 + 
+          '<br/>' +'Total number_of_self_citations: '+ feature.properties.number_of_self_citations_1991_2000 +
+          '<br/>' +'Total_number_of_citations: '+ feature.properties.total_number_of_citations_1991_2000 +
+          '<br/>' +'Total_number_of_refereed_citations: '+ feature.properties.total_number_of_refereed_citations_1991_2000 +
+          '<br/>'+'2001-2010 ---------------------------------------' + 
+          '<br/>' + 'Total Number of Papers: ' + feature.properties.number_of_papers_2001_2010  + 
+          '<br/>' + 'Total number_of_citing_papers: ' + feature.properties.number_of_citing_papers_2001_2010 + 
+          '<br/>' +'Total number_of_self_citations: '+ feature.properties.number_of_self_citations_2001_2010 +
+          '<br/>' +'Total_number_of_citations: '+ feature.properties.total_number_of_citations_2001_2010 +
+          '<br/>' +'Total_number_of_refereed_citations: '+ feature.properties.total_number_of_refereed_citations_2001_2010 + 
+          '<br/>'+'2011-2015 ---------------------------------------' + 
+          '<br/>' + 'Total Number of Papers: ' + feature.properties.number_of_papers_2011_2015  + 
+          '<br/>' + 'Total number_of_citing_papers: ' + feature.properties.number_of_citing_papers_2011_2015 + 
+          '<br/>' +'Total number_of_self_citations: '+ feature.properties.number_of_self_citations_2011_2015 +
+          '<br/>' +'Total_number_of_citations: '+ feature.properties.total_number_of_citations_2011_2015 +
+          '<br/>' +'Total_number_of_refereed_citations: '+ feature.properties.total_number_of_refereed_citations_2011_2015 +
+          '<br/>'+'2016-2017 ---------------------------------------' + 
+          '<br/>' + 'Total Number of Papers: ' + feature.properties.number_of_papers_2016_2017  + 
+          '<br/>' + 'Total number_of_citing_papers: ' + feature.properties.number_of_citing_papers_2016_2017 + 
+          '<br/>' +'Total number_of_self_citations: '+ feature.properties.number_of_self_citations_2016_2017 +
+          '<br/>' +'Total_number_of_citations: '+ feature.properties.total_number_of_citations_2016_2017 +
+          '<br/>' +'Total_number_of_refereed_citations: '+ feature.properties.total_number_of_refereed_citations_2016_2017 +
+          '</h4>');
 
+      }
       var featuresLayer = new L.GeoJSON(data, {
-        onEachFeature: function(feature, marker) {
-        marker.bindPopup('<h4 style="color:'+feature.properties.color+'">'+ feature.properties.Clean_Feature_Name +'</h4>');
-        }
-      });
-         
+        onEachFeature: clickFeature
+      }).addTo(map);
+
       var searchControl = new L.Control.Search({
           layer: featuresLayer,
           propertyName: 'Clean_Feature_Name',
           initial: false,
           zoom: 8,
-          hideMarkerOnCollapse: true,
+          hideMarkerOnCollapse: false,
             moveToLocation: function(latlng, title, map) {
             map.setView(latlng); // access the zoom
             },

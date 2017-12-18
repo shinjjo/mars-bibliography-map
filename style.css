@@ -1,5 +1,5 @@
 body {
-	background:#b5d0d0;
+	background: #ffffff;
 	color:#285585;
 	font-family:Arial;
 }
@@ -30,12 +30,12 @@ h3 a:hover {
 	font-size:1em;
 }
 #map {
-	border-radius:.125em;
-	border:2px solid #1978cf;
+	border-radius: .15em;
+	border: 1px solid #1978cf;
 	margin: 4px 0;
 	float:left;
 	width:600px;
-	height:400px;	
+	height:400px;
 }
 ul {
 	font-size:.85em;
