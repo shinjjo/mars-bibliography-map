@@ -190,7 +190,7 @@
       info.update = function (props) {
         this._div.innerHTML = '<h4>Mars Bibliographic Information</h4>' +  (props ?
         '<b>' + props.Clean_Feature_Name + '</b><br/>' + 'Feature Type: ' + props.Feature_Type 
-        + '<br/>' + 'Diameter: ' + props.Diameter + '<br/>' + 'Origin: ' + props.Origin
+        + '<br/>' + 'Diameter: ' + props.Diameter 
         : 'Hover over a feature');
       };
 
@@ -333,11 +333,11 @@
 
       var baselayer = {
         "Basemap": geojson,
-        "[Heatmap] Number of Papers" : nopmap,
-        "[Heatmap] Number of Citing Papers" : nocpmap,
-        "[Heatmap] Number of Self-citations" : noscmap,
-        "[Heatmap] Total Number of Citations" : tncmap,
-        "[Heatmap] Total Numbre of Refereed Citations" : tnrcmap,
+        "Number of Papers" : nopmap,
+        "Number of Citing Papers" : nocpmap,
+        "Number of Self-citations" : noscmap,
+        "Total Number of Citations" : tncmap,
+        "Total Numbre of Refereed Citations" : tnrcmap,
         "Landing Sites": landing
 
       }
