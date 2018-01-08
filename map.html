@@ -7,9 +7,12 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.2.0/dist/leaflet.css">
     <link rel="stylesheet" href="src/leaflet-search.css" />
     <link rel="stylesheet" href="src/style.css" />
+    <link rel="stylesheet" href="http://code.jquery.com/ui/1.9.2/themes/base/jquery-ui.css" />
+    <script src="http://code.jquery.com/ui/1.9.2/jquery-ui.js"></script>
     <script src="https://unpkg.com/leaflet@1.2.0/dist/leaflet.js"></script>
     <script src="https://code.jquery.com/jquery-2.1.1.min.js"></script> 
     <script src="https://api.tiles.mapbox.com/mapbox.js/plugins/leaflet-omnivore/v0.3.1/leaflet-omnivore.min.js"></script>
+    <script src =" LeafletSlider/SliderControl.js"></script>
     <script src ="src/papaparse.min.js"></script>
     <script src ="src/leaflet-search.src.js"></script>
 
@@ -190,8 +193,7 @@
       info.update = function (props) {
         this._div.innerHTML = '<h4>Mars Bibliographic Information</h4>' +  (props ?
         '<b>' + props.Clean_Feature_Name + '</b><br/>' + 'Feature Type: ' + props.Feature_Type 
-        + '<br/>' + 'Diameter: ' + props.Diameter 
-        : 'Hover over a feature');
+        + '<br/>' + 'Diameter: ' + props.Diameter: 'Hover over a feature');
       };
 
       info.addTo(map);
@@ -337,7 +339,7 @@
         "Number of Citing Papers" : nocpmap,
         "Number of Self-citations" : noscmap,
         "Total Number of Citations" : tncmap,
-        "Total Numbre of Refereed Citations" : tnrcmap,
+        "Total Number of Refereed Citations" : tnrcmap,
         "Landing Sites": landing
 
       }
@@ -424,6 +426,17 @@
             },
            });
         map.addControl( searchControl );  
+
+      var testlayer = L.geoJson(data);
+      var sliderControl = L.control.sliderControl({position: "topright", layer: testlayer});
+
+      //Make sure to add the slider to the map ;-)
+      map.addControl(sliderControl);
+
+      //And initialize the slider
+      sliderControl.startSlider();
+
+      $('#slider-timestamp').html(options.markers[ui.value].feature.properties.year.substr(0, 19));
 
     </script>
 
